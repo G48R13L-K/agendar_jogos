@@ -31,7 +31,7 @@ class _HomeState extends State<Home> {
 
     Navigator.pushNamedAndRemoveUntil(
       context,
-      '/', // rota do login
+      '/', 
       (route) => false,
     );
   }

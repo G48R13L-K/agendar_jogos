@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:intl/intl.dart';
-import 'jogos.dart';
-import 'my_change_notifier.dart';
 
 class JogosDisponiveis extends StatefulWidget {
   const JogosDisponiveis({super.key});
@@ -12,162 +8,165 @@ class JogosDisponiveis extends StatefulWidget {
 }
 
 class _JogosDisponiveisState extends State<JogosDisponiveis> {
-  bool isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _carregarJogos();
-  }
-
-  Future<void> _carregarJogos() async {
-    setState(() => isLoading = true);
-    try {
-      await context.read<MyChangeNotifier>().fetchJogos();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Erro ao carregar jogos: $e")),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
-  }
-
-  Future<void> _participar(Jogos jogo) async {
-    final provider = context.read<MyChangeNotifier>();
-    final usuario = provider.usuarioLogado ?? "Desconhecido";
-
-    if (jogo.jogadores.contains(usuario)) return;
-
-    setState(() => isLoading = true);
-
-    jogo.jogadores.add(usuario);
-
-    try {
-      await provider.supabase
-          .from('jogos')
-          .update({'jogadores': jogo.jogadores.cast<dynamic>()})
-          .eq('id', jogo.id);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Você entrou no jogo! ⚽")),
-      );
-
-      await _carregarJogos();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erro ao entrar no jogo: $e")),
-      );
-    } finally {
-      if (mounted) setState(() => isLoading = false);
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    final provider = context.watch<MyChangeNotifier>();
-    final usuario = provider.usuarioLogado ?? "Usuário";
-
-    final jogosDisponiveis = provider.jogos
-        .where((j) => !j.jogadores.contains(usuario))
-        .toList();
-
     return Scaffold(
-      backgroundColor: Colors.green[50],
 
+      
       appBar: AppBar(
-        backgroundColor: Colors.green,
-        title: const Text("Jogos Disponíveis"),
+        elevation: 0,
         centerTitle: true,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _carregarJogos,
+        iconTheme: const IconThemeData(color: Colors.white),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF1B5E20),
+                Color(0xFF4CAF50),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+        title: const Text(
+          "Jogos Disponíveis",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+          ),
+        ),
+      ),
+
+      backgroundColor: const Color(0xFFF1F8E9),
+
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+
+          _buildCard(
+            titulo: "Futebol",
+            data: "04/03/2026 16:00",
+            vagas: "1/22",
+            cor: Colors.green,
+            icone: Icons.sports_soccer,
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildCard(
+            titulo: "Basquete",
+            data: "04/03/2026 15:45",
+            vagas: "1/10",
+            cor: Colors.orange,
+            icone: Icons.sports_basketball,
+          ),
+
+          const SizedBox(height: 20),
+
+          _buildCard(
+            titulo: "Vôlei",
+            data: "07/03/2026 10:30",
+            vagas: "1/12",
+            cor: Colors.blue,
+            icone: Icons.sports_volleyball,
           ),
         ],
       ),
 
-      body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-                color: Colors.green,
-              ),
-            )
-          : jogosDisponiveis.isEmpty
-              ? const Center(
+      
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.green,
+        onPressed: () {},
+        child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  Widget _buildCard({
+    required String titulo,
+    required String data,
+    required String vagas,
+    required Color cor,
+    required IconData icone,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: cor.withOpacity(0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+
+          Icon(
+            icone,
+            color: cor,
+            size: 40,
+          ),
+
+          const SizedBox(width: 16),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+
+                Text(
+                  titulo,
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: cor,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(data),
+
+                const SizedBox(height: 8),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: cor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                   child: Text(
-                    "Nenhum jogo disponível",
+                    vagas,
                     style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.green,
+                      color: cor,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                )
-              : ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: jogosDisponiveis.length,
-                  itemBuilder: (context, index) {
-                    final jogo = jogosDisponiveis[index];
-                    final dataFormatada =
-                        DateFormat('dd/MM/yyyy HH:mm').format(jogo.data);
-
-                    return Card(
-                      elevation: 6,
-                      shadowColor: Colors.green.withOpacity(0.3),
-                      margin: const EdgeInsets.only(bottom: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.sports_soccer,
-                              size: 40,
-                              color: Colors.green,
-                            ),
-                            const SizedBox(width: 16),
-
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    jogo.esporte,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    "Data: $dataFormatada",
-                                    style: const TextStyle(fontSize: 14),
-                                  ),
-                                ],
-                              ),
-                            ),
-
-                            ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: () => _participar(jogo),
-                              child: const Text("Participar"),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
                 ),
+              ],
+            ),
+          ),
+
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: cor,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {},
+            child: const Text("Participar"),
+          ),
+        ],
+      ),
     );
   }
 }

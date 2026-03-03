@@ -25,16 +25,14 @@ class MyChangeNotifier extends ChangeNotifier {
     usuarioLogado = null;
     notifyListeners();
   }
-  // JOGOS
 
+  
   Future<void> fetchJogos() async {
     try {
       final response = await supabase.from('jogos').select();
-      if (response is List) {
-        jogos = response.map((e) => Jogos.fromMap(e)).toList();
-        notifyListeners();
-      }
-    } catch (e) {
+      jogos = response.map((e) => Jogos.fromMap(e)).toList();
+      notifyListeners();
+        } catch (e) {
       print("Erro fetchJogos: $e");
       rethrow;
     }
@@ -46,11 +44,13 @@ class MyChangeNotifier extends ChangeNotifier {
         .from('jogos')
         .insert({
           'data': jogo.data.toIso8601String(),
-          'esporte': jogo.esporte,
+          'esporte': jogo.esporte.name,
           'jogadores': jogo.jogadores.cast<dynamic>(), 
         })
         .select()
         .single();
+
+    
 
     final novoJogo = Jogos.fromMap(response);
     jogos.add(novoJogo);
@@ -59,19 +59,53 @@ class MyChangeNotifier extends ChangeNotifier {
     print("Erro insertJogo: $e");
     rethrow;
   }
+
 }
 
+  Future<void> sairDoJogo(int jogoId, String usuario) async {
+  try {
+    final jogoIndex = jogos.indexWhere((j) => j.id == jogoId);
+
+    if (jogoIndex == -1) return;
+
+    final jogo = jogos[jogoIndex];
+
+    
+    jogo.jogadores.remove(usuario);
+
+    
+    if (jogo.jogadores.isEmpty) {
+      await supabase
+          .from('jogos')
+          .delete()
+          .eq('id', jogoId);
+
+      jogos.removeAt(jogoIndex);
+    } else {
+      
+      await supabase
+          .from('jogos')
+          .update({
+            'jogadores': jogo.jogadores.cast<dynamic>(),
+          })
+          .eq('id', jogoId);
+
+      jogos[jogoIndex] = jogo;
+    }
+
+    notifyListeners();
+  } catch (e) {
+    print("Erro ao sair do jogo: $e");
+  }
+}
   
-  // USUÁRIOS
   
   Future<void> fetchUsuarios() async {
     try {
       final response = await supabase.from('usuarios').select();
-      if (response is List) {
-        usuarios = response.map((e) => Usuario.fromMap(e)).toList();
-        notifyListeners();
-      }
-    } catch (e) {
+      usuarios = response.map((e) => Usuario.fromMap(e)).toList();
+      notifyListeners();
+        } catch (e) {
       print("Erro fetchUsuarios: $e");
       rethrow;
     }
@@ -88,3 +122,4 @@ class MyChangeNotifier extends ChangeNotifier {
   }
 }
 
+  

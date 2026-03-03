@@ -13,7 +13,8 @@ class NovoJogo extends StatefulWidget {
 
 class _NovoJogoState extends State<NovoJogo> {
   final _formKey = GlobalKey<FormState>();
-  final TextEditingController esporteController = TextEditingController();
+
+  Esporte? esporteSelecionado;
 
   DateTime? dataSelecionada;
   TimeOfDay? horaSelecionada;
@@ -64,7 +65,7 @@ class _NovoJogoState extends State<NovoJogo> {
       final jogo = Jogos(
         id: 0,
         data: dataFinal,
-        esporte: esporteController.text.trim(),
+        esporte: esporteSelecionado!,
         jogadores: [usuario],
       );
 
@@ -81,12 +82,6 @@ class _NovoJogoState extends State<NovoJogo> {
     } finally {
       if (mounted) setState(() => isLoading = false);
     }
-  }
-
-  @override
-  void dispose() {
-    esporteController.dispose();
-    super.dispose();
   }
 
   @override
@@ -122,8 +117,9 @@ class _NovoJogoState extends State<NovoJogo> {
               ),
               const SizedBox(height: 20),
 
-              TextFormField(
-                controller: esporteController,
+              
+              DropdownButtonFormField<Esporte>(
+                value: esporteSelecionado,
                 decoration: InputDecoration(
                   labelText: "Esporte",
                   prefixIcon: const Icon(Icons.sports),
@@ -133,8 +129,17 @@ class _NovoJogoState extends State<NovoJogo> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
+                items: Esporte.values.map((esporte) {
+                  return DropdownMenuItem(
+                    value: esporte,
+                    child: Text(esporte.nome),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() => esporteSelecionado = value);
+                },
                 validator: (value) =>
-                    value == null || value.isEmpty ? "Informe o esporte" : null,
+                    value == null ? "Selecione um esporte" : null,
               ),
 
               const SizedBox(height: 20),
