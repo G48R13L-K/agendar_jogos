@@ -11,6 +11,7 @@ class MyChangeNotifier extends ChangeNotifier {
   String? usuarioLogado;
   int currentIndex = 0;
 
+  // ------------------- Controle de tela -------------------
   void setIndex(int i) {
     currentIndex = i;
     notifyListeners();
@@ -26,86 +27,95 @@ class MyChangeNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  
+  // ------------------- Jogos -------------------
   Future<void> fetchJogos() async {
     try {
       final response = await supabase.from('jogos').select();
       jogos = response.map((e) => Jogos.fromMap(e)).toList();
       notifyListeners();
-        } catch (e) {
+    } catch (e) {
       print("Erro fetchJogos: $e");
       rethrow;
     }
   }
 
   Future<void> insertJogo({required Jogos jogo}) async {
-  try {
-    final response = await supabase
-        .from('jogos')
-        .insert({
-          'data': jogo.data.toIso8601String(),
-          'esporte': jogo.esporte.name,
-          'jogadores': jogo.jogadores.cast<dynamic>(), 
-        })
-        .select()
-        .single();
-
-    
-
-    final novoJogo = Jogos.fromMap(response);
-    jogos.add(novoJogo);
-    notifyListeners();
-  } catch (e) {
-    print("Erro insertJogo: $e");
-    rethrow;
-  }
-
-}
-
-  Future<void> sairDoJogo(int jogoId, String usuario) async {
-  try {
-    final jogoIndex = jogos.indexWhere((j) => j.id == jogoId);
-
-    if (jogoIndex == -1) return;
-
-    final jogo = jogos[jogoIndex];
-
-    
-    jogo.jogadores.remove(usuario);
-
-    
-    if (jogo.jogadores.isEmpty) {
-      await supabase
+    try {
+      final response = await supabase
           .from('jogos')
-          .delete()
-          .eq('id', jogoId);
-
-      jogos.removeAt(jogoIndex);
-    } else {
-      
-      await supabase
-          .from('jogos')
-          .update({
+          .insert({
+            'data': jogo.data.toIso8601String(),
+            'esporte': jogo.esporte.name,
             'jogadores': jogo.jogadores.cast<dynamic>(),
           })
-          .eq('id', jogoId);
+          .select()
+          .single();
 
-      jogos[jogoIndex] = jogo;
+      final novoJogo = Jogos.fromMap(response);
+      jogos.add(novoJogo);
+      notifyListeners();
+    } catch (e) {
+      print("Erro insertJogo: $e");
+      rethrow;
     }
-
-    notifyListeners();
-  } catch (e) {
-    print("Erro ao sair do jogo: $e");
   }
-}
-  
-  
+
+  // ------------------- Entrar em um jogo -------------------
+  Future<void> entrarNoJogo(int jogoId, String usuario) async {
+    try {
+      final jogoIndex = jogos.indexWhere((j) => j.id == jogoId);
+      if (jogoIndex == -1) return;
+
+      final jogo = jogos[jogoIndex];
+
+      if (!jogo.jogadores.contains(usuario)) {
+        jogo.jogadores.add(usuario);
+
+        await supabase.from('jogos').update({
+          'jogadores': jogo.jogadores.cast<dynamic>(),
+        }).eq('id', jogoId);
+
+        jogos[jogoIndex] = jogo;
+        notifyListeners();
+      }
+    } catch (e) {
+      print("Erro ao entrar no jogo: $e");
+    }
+  }
+
+  // ------------------- Sair de um jogo -------------------
+  Future<void> sairDoJogo(int jogoId, String usuario) async {
+    try {
+      final jogoIndex = jogos.indexWhere((j) => j.id == jogoId);
+      if (jogoIndex == -1) return;
+
+      final jogo = jogos[jogoIndex];
+      jogo.jogadores.remove(usuario);
+
+      if (jogo.jogadores.isEmpty) {
+        await supabase.from('jogos').delete().eq('id', jogoId);
+        jogos.removeAt(jogoIndex);
+      } else {
+        await supabase.from('jogos').update({
+          'jogadores': jogo.jogadores.cast<dynamic>(),
+        }).eq('id', jogoId);
+
+        jogos[jogoIndex] = jogo;
+      }
+
+      notifyListeners();
+    } catch (e) {
+      print("Erro ao sair do jogo: $e");
+    }
+  }
+
+  // ------------------- Usuários -------------------
   Future<void> fetchUsuarios() async {
     try {
       final response = await supabase.from('usuarios').select();
       usuarios = response.map((e) => Usuario.fromMap(e)).toList();
       notifyListeners();
-        } catch (e) {
+    } catch (e) {
       print("Erro fetchUsuarios: $e");
       rethrow;
     }
@@ -121,5 +131,3 @@ class MyChangeNotifier extends ChangeNotifier {
     }
   }
 }
-
-  
